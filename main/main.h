@@ -45,6 +45,27 @@ typedef struct {
 	uint32_t ble_pin;
 	uint32_t ble_service_capacity;
 	uint32_t ble_chr_descr_capacity;
+	uint8_t lighting_enabled;
+	uint8_t lighting_effect;
+	uint16_t lighting_led_count;
+	float lighting_brightness;
+	float lighting_speed;
+	uint8_t lighting_auto_start;
+	uint16_t lighting_red;
+	uint16_t lighting_green;
+	uint16_t lighting_blue;
+	uint8_t brake_enabled;
+	uint16_t brake_can_id;
+	float brake_adc_threshold;
+	uint8_t brake_active_high;
+	float brake_brightness;
+	float brake_blink_hz;
+	uint8_t lighting_palette;
+	uint8_t lighting_color;
+	uint8_t brake_color;
+	uint16_t brake_red;
+	uint16_t brake_green;
+	uint16_t brake_blue;
 } main_config_t;
 #endif
 

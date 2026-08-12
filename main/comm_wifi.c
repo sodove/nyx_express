@@ -74,6 +74,20 @@ static wifi_config_t wifi_config = {0};
 
 static comm_wifi_event_cb_t event_listener = NULL;
 
+static size_t copy_wifi_field(uint8_t *dst, size_t dst_size, const char *src, size_t src_size) {
+	if (dst_size == 0) {
+		return 0;
+	}
+
+	size_t len = strnlen(src, src_size);
+	if (len >= dst_size) {
+		len = dst_size - 1;
+	}
+	memcpy(dst, src, len);
+	dst[len] = '\0';
+	return len;
+}
+
 typedef struct {
 	PACKET_STATE_t *packet;
 	int socket;
@@ -472,11 +486,21 @@ void comm_wifi_send_raw_hub(unsigned char *buffer, unsigned int len) {
 }
 
 void comm_wifi_init(void) {
-	s_wifi_event_group = xEventGroupCreate();
-	esp_netif_init();
-	esp_event_loop_create_default();
-	
 	wifi_mode = backup.config.wifi_mode;
+	commands_printf("WIFI init requested: mode=%d", wifi_mode);
+
+	s_wifi_event_group = xEventGroupCreate();
+	esp_err_t result = esp_netif_init();
+	if (result != ESP_OK && result != ESP_ERR_INVALID_STATE) {
+		commands_printf("WIFI esp_netif_init failed: %d", result);
+		return;
+	}
+
+	result = esp_event_loop_create_default();
+	if (result != ESP_OK && result != ESP_ERR_INVALID_STATE) {
+		commands_printf("WIFI event loop init failed: %d", result);
+		return;
+	}
 
 	if (wifi_mode == WIFI_MODE_ACCESS_POINT) {
 		esp_netif_create_default_wifi_ap();
@@ -485,9 +509,16 @@ void comm_wifi_init(void) {
 	}
 
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-	esp_wifi_init(&cfg);
+	result = esp_wifi_init(&cfg);
+	if (result != ESP_OK) {
+		commands_printf("WIFI esp_wifi_init failed: %d", result);
+		return;
+	}
 
-	esp_wifi_set_storage(WIFI_STORAGE_RAM);
+	result = esp_wifi_set_storage(WIFI_STORAGE_RAM);
+	if (result != ESP_OK) {
+		commands_printf("WIFI set storage failed: %d", result);
+	}
 
 	if (backup.config.ble_mode == BLE_MODE_DISABLED) {
 		esp_wifi_set_ps(WIFI_PS_NONE);
@@ -510,13 +541,30 @@ void comm_wifi_init(void) {
 			NULL,
 			&instance_got_ip);
 
-	esp_wifi_set_mode(WIFI_MODE_APSTA);
+	result = esp_wifi_set_mode(WIFI_MODE_APSTA);
+	if (result != ESP_OK) {
+		commands_printf("WIFI set mode failed: %d", result);
+		return;
+	}
 
 	if (wifi_mode == WIFI_MODE_ACCESS_POINT) {
+		const char *ap_ssid = (char*)backup.config.wifi_ap_ssid;
+		const char *ap_key = (char*)backup.config.wifi_ap_key;
+		size_t ap_ssid_size = sizeof(backup.config.wifi_ap_ssid);
+		size_t ap_key_size = sizeof(backup.config.wifi_ap_key);
+		if (strnlen(ap_ssid, ap_ssid_size) == 0) {
+			ap_ssid = "NyxExpress";
+			ap_ssid_size = sizeof("NyxExpress") - 1;
+		}
+		if (strnlen(ap_key, ap_key_size) < 8) {
+			ap_key = "vesc6wifi";
+			ap_key_size = sizeof("vesc6wifi") - 1;
+		}
+
 		wifi_config = (wifi_config_t){
 			.ap = {
 				.ssid = "",
-				.ssid_len = strlen((char*)backup.config.wifi_ap_ssid),
+				.ssid_len = 0,
 				.channel = 1,
 				.password = "",
 				.max_connection = 4,
@@ -528,10 +576,16 @@ void comm_wifi_init(void) {
 			},
 		};
 
-		strcpy((char*)wifi_config.ap.ssid, (char*)backup.config.wifi_ap_ssid);
-		strcpy((char*)wifi_config.ap.password, (char*)backup.config.wifi_ap_key);
+		wifi_config.ap.ssid_len = copy_wifi_field(
+			wifi_config.ap.ssid, sizeof(wifi_config.ap.ssid), ap_ssid, ap_ssid_size);
+		copy_wifi_field(
+			wifi_config.ap.password, sizeof(wifi_config.ap.password), ap_key, ap_key_size);
 
-		esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
+		result = esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
+		if (result != ESP_OK) {
+			commands_printf("WIFI AP config failed: %d", result);
+			return;
+		}
 	} else {
 		wifi_config = (wifi_config_t){
 			.sta = {
@@ -541,21 +595,38 @@ void comm_wifi_init(void) {
 			},
 		};
 
-		strcpy((char*)wifi_config.sta.ssid, (char*)backup.config.wifi_sta_ssid);
-		strcpy((char*)wifi_config.sta.password, (char*)backup.config.wifi_sta_key);
+		copy_wifi_field(
+			wifi_config.sta.ssid, sizeof(wifi_config.sta.ssid),
+			(char*)backup.config.wifi_sta_ssid, sizeof(backup.config.wifi_sta_ssid));
+		copy_wifi_field(
+			wifi_config.sta.password, sizeof(wifi_config.sta.password),
+			(char*)backup.config.wifi_sta_key, sizeof(backup.config.wifi_sta_key));
 
-		esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+		result = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+		if (result != ESP_OK) {
+			commands_printf("WIFI STA config failed: %d", result);
+			return;
+		}
 
 		// Enable FTM responder
 		wifi_config_t ap_wifi_config;
 		esp_wifi_get_config(WIFI_IF_AP, &ap_wifi_config);
 		ap_wifi_config.ap.ftm_responder = true;
-		esp_wifi_set_config(WIFI_IF_AP, &ap_wifi_config);
+		result = esp_wifi_set_config(WIFI_IF_AP, &ap_wifi_config);
+		if (result != ESP_OK) {
+			commands_printf("WIFI AP FTM config failed: %d", result);
+		}
 
 		wifi_reconnect_disabled = false;
 	}
 
-	esp_wifi_start();
+	result = esp_wifi_start();
+	if (result != ESP_OK) {
+		commands_printf("WIFI start failed: %d", result);
+		return;
+	}
+
+	commands_printf("WIFI initialized: mode=%d", wifi_mode);
 
 	if (backup.config.use_tcp_local) {
 		comm_local.packet = calloc(1, sizeof(PACKET_STATE_t));

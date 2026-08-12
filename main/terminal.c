@@ -198,6 +198,11 @@ void terminal_process_string(char *str) {
 		esp_ip4_addr_t ip_client = comm_wifi_get_ip_client();
 
 		commands_printf("WIFI IP           : " IPSTR, IP2STR(&ip));
+		commands_printf("WIFI Config Mode  : %d", backup.config.wifi_mode);
+		commands_printf("WIFI Driver Mode  : %d", comm_wifi_get_mode());
+		commands_printf("WIFI AP SSID      : %s", backup.config.wifi_ap_ssid);
+		commands_printf("WIFI AP Key Len   : %d", (int)strnlen(
+				(const char *)backup.config.wifi_ap_key, sizeof(backup.config.wifi_ap_key)));
 		commands_printf("WIFI Connected    : %d", comm_wifi_is_connected());
 		commands_printf("WIFI Connecting   : %d", comm_wifi_is_connecting());
 		commands_printf("WIFI Client IP    : " IPSTR, IP2STR(&ip_client));

@@ -25,6 +25,7 @@ set(COMPONENT_SRCS
 "bms.c"
 "log_comm.c"
 "digital_filter.c"
+"nyx_lighting.c"
 
 "config/confsrc.c"
 "hwconf/hw.c"

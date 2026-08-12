@@ -110,6 +110,11 @@ if(DEFINED HW_NAME AND DEFINED HW_TARGET AND DEFINED HW_FILE_NAME)
     file(GLOB QMLUI_QML_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/${HW_DIR}/*.qml")
     
     if(QMLUI_QML_SRCS)
+        list(LENGTH QMLUI_QML_SRCS QMLUI_QML_COUNT)
+        if(QMLUI_QML_COUNT GREATER 1)
+            message(FATAL_ERROR "Only one hardware QML file is supported for a firmware target")
+        endif()
+
         find_package(Python3 REQUIRED COMPONENTS Interpreter)
         set(QMLUI_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${HW_DIR}")
         set(QMLUI_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/tools/create_qmlui_hw.py")
@@ -132,6 +137,14 @@ if(DEFINED HW_NAME AND DEFINED HW_TARGET AND DEFINED HW_FILE_NAME)
                 message(FATAL_ERROR "Failed to generate QMLUI HW files:\n${QMLUI_ERROR}")
             endif()
             message(STATUS "${QMLUI_OUTPUT}")
+
+            get_filename_component(QMLUI_FILE_BASE ${QMLUI_QML_SRC} NAME_WE)
+            # hw.c includes the generated source, while hw.h and commands.c
+            # use the generated header and advertise the UI to VESC Tool.
+            add_compile_definitions(
+                QMLUI_HEADER_HW="${QMLUI_FILE_BASE}.h"
+                QMLUI_SOURCE_HW="${QMLUI_FILE_BASE}.c"
+            )
         endforeach()
     endif()
 else ()

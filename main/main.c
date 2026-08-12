@@ -55,12 +55,151 @@
 #include "lispif.h"
 #include "bms.h"
 #include "ble/custom_ble.h"
+#include "nyx_lighting.h"
 
 #include <string.h>
 #include <sys/time.h>
 
 // Global variables
 volatile backup_data backup;
+
+/* Layout used by the pre-NyxExpress firmware. Keep this separate from the
+ * current config so adding Lighting/Brake fields does not erase networking
+ * and CAN settings stored in the old NVS blob. */
+typedef struct {
+	int controller_id;
+	CAN_BAUD can_baud_rate;
+	int can_status_rate_hz;
+	WIFI_MODE wifi_mode;
+	char wifi_sta_ssid[36];
+	char wifi_sta_key[26];
+	char wifi_ap_ssid[36];
+	char wifi_ap_key[26];
+	bool use_tcp_local;
+	bool use_tcp_hub;
+	char tcp_hub_url[36];
+	uint16_t tcp_hub_port;
+	char tcp_hub_id[26];
+	char tcp_hub_pass[26];
+	BLE_MODE ble_mode;
+	char ble_name[9];
+	uint32_t ble_pin;
+	uint32_t ble_service_capacity;
+	uint32_t ble_chr_descr_capacity;
+} main_config_legacy_t;
+
+/* NyxExpress config immediately before the user-selectable palette was
+ * added. The field order must stay identical so the raw NVS blob can be
+ * upgraded without dropping the user's lighting, CAN, WiFi or BLE settings. */
+typedef struct {
+	int controller_id;
+	CAN_BAUD can_baud_rate;
+	int can_status_rate_hz;
+	WIFI_MODE wifi_mode;
+	char wifi_sta_ssid[36];
+	char wifi_sta_key[26];
+	char wifi_ap_ssid[36];
+	char wifi_ap_key[26];
+	bool use_tcp_local;
+	bool use_tcp_hub;
+	char tcp_hub_url[36];
+	uint16_t tcp_hub_port;
+	char tcp_hub_id[26];
+	char tcp_hub_pass[26];
+	BLE_MODE ble_mode;
+	char ble_name[9];
+	uint32_t ble_pin;
+	uint32_t ble_service_capacity;
+	uint32_t ble_chr_descr_capacity;
+	uint8_t lighting_enabled;
+	uint8_t lighting_effect;
+	uint16_t lighting_led_count;
+	float lighting_brightness;
+	float lighting_speed;
+	uint8_t lighting_auto_start;
+	uint16_t lighting_red;
+	uint16_t lighting_green;
+	uint16_t lighting_blue;
+	uint8_t brake_enabled;
+	uint16_t brake_can_id;
+	float brake_adc_threshold;
+	uint8_t brake_active_high;
+	float brake_brightness;
+	float brake_blink_hz;
+} main_config_palette_legacy_t;
+
+/* NyxExpress config immediately before the preset-color selectors were
+ * added. It includes the user-selectable palette field. */
+typedef struct {
+	int controller_id;
+	CAN_BAUD can_baud_rate;
+	int can_status_rate_hz;
+	WIFI_MODE wifi_mode;
+	char wifi_sta_ssid[36];
+	char wifi_sta_key[26];
+	char wifi_ap_ssid[36];
+	char wifi_ap_key[26];
+	bool use_tcp_local;
+	bool use_tcp_hub;
+	char tcp_hub_url[36];
+	uint16_t tcp_hub_port;
+	char tcp_hub_id[26];
+	char tcp_hub_pass[26];
+	BLE_MODE ble_mode;
+	char ble_name[9];
+	uint32_t ble_pin;
+	uint32_t ble_service_capacity;
+	uint32_t ble_chr_descr_capacity;
+	uint8_t lighting_enabled;
+	uint8_t lighting_effect;
+	uint16_t lighting_led_count;
+	float lighting_brightness;
+	float lighting_speed;
+	uint8_t lighting_auto_start;
+	uint16_t lighting_red;
+	uint16_t lighting_green;
+	uint16_t lighting_blue;
+	uint8_t brake_enabled;
+	uint16_t brake_can_id;
+	float brake_adc_threshold;
+	uint8_t brake_active_high;
+	float brake_brightness;
+	float brake_blink_hz;
+	uint8_t lighting_palette;
+} main_config_color_legacy_t;
+
+typedef struct {
+	uint32_t controller_id_init_flag;
+	uint16_t controller_id;
+	uint32_t can_baud_rate_init_flag;
+	CAN_BAUD can_baud_rate;
+	uint32_t config_init_flag;
+	main_config_color_legacy_t config;
+	volatile uint32_t pad1;
+	volatile uint32_t pad2;
+} backup_data_color_legacy_t;
+
+typedef struct {
+	uint32_t controller_id_init_flag;
+	uint16_t controller_id;
+	uint32_t can_baud_rate_init_flag;
+	CAN_BAUD can_baud_rate;
+	uint32_t config_init_flag;
+	main_config_legacy_t config;
+	volatile uint32_t pad1;
+	volatile uint32_t pad2;
+} backup_data_legacy_t;
+
+typedef struct {
+	uint32_t controller_id_init_flag;
+	uint16_t controller_id;
+	uint32_t can_baud_rate_init_flag;
+	CAN_BAUD can_baud_rate;
+	uint32_t config_init_flag;
+	main_config_palette_legacy_t config;
+	volatile uint32_t pad1;
+	volatile uint32_t pad2;
+} backup_data_palette_legacy_t;
 
 // Private variables
 volatile static bool init_done = false;
@@ -87,11 +226,38 @@ void app_main(void) {
 		nvs_open("vesc", NVS_READONLY, &my_handle);
 		size_t required_size = 0;
 		nvs_get_blob(my_handle, "backup", NULL, &required_size);
+		backup_data_legacy_t legacy = {0};
+		backup_data_palette_legacy_t palette_legacy = {0};
+		backup_data_color_legacy_t color_legacy = {0};
+		bool legacy_loaded = false;
+		bool palette_legacy_loaded = false;
+		bool color_legacy_loaded = false;
 
 		memset((void*)&backup, 0, sizeof(backup));
 
 		if (required_size == sizeof(backup_data)) {
 			nvs_get_blob(my_handle, "backup", (void*)&backup, &required_size);
+		} else if (required_size == sizeof(backup_data_palette_legacy_t)) {
+			size_t old_size = sizeof(palette_legacy);
+			palette_legacy_loaded = nvs_get_blob(my_handle, "backup", &palette_legacy, &old_size) == ESP_OK;
+			if (palette_legacy_loaded) {
+				backup.controller_id_init_flag = palette_legacy.controller_id_init_flag;
+				backup.controller_id = palette_legacy.controller_id;
+				backup.can_baud_rate_init_flag = palette_legacy.can_baud_rate_init_flag;
+				backup.can_baud_rate = palette_legacy.can_baud_rate;
+			}
+		} else if (required_size == sizeof(backup_data_color_legacy_t)) {
+			size_t old_size = sizeof(color_legacy);
+			color_legacy_loaded = nvs_get_blob(my_handle, "backup", &color_legacy, &old_size) == ESP_OK;
+			if (color_legacy_loaded) {
+				backup.controller_id_init_flag = color_legacy.controller_id_init_flag;
+				backup.controller_id = color_legacy.controller_id;
+				backup.can_baud_rate_init_flag = color_legacy.can_baud_rate_init_flag;
+				backup.can_baud_rate = color_legacy.can_baud_rate;
+			}
+		} else if (required_size == sizeof(backup_data_legacy_t)) {
+			size_t legacy_size = sizeof(legacy);
+			legacy_loaded = nvs_get_blob(my_handle, "backup", &legacy, &legacy_size) == ESP_OK;
 		}
 
 		if (backup.controller_id_init_flag != VAR_INIT_CODE) {
@@ -111,6 +277,48 @@ void app_main(void) {
 			confparser_set_defaults_main_config_t((main_config_t*)(&backup.config));
 #endif
 			backup.config_init_flag = MAIN_CONFIG_T_SIGNATURE;
+			if (color_legacy_loaded) {
+				memcpy((void *)&backup.config, &color_legacy.config,
+						sizeof(color_legacy.config));
+				backup.config.lighting_palette = color_legacy.config.lighting_palette;
+				backup.config.lighting_color = 15;
+				backup.config.brake_color = 0;
+				backup.config.brake_red = 255;
+				backup.config.brake_green = 255;
+				backup.config.brake_blue = 0;
+			} else if (palette_legacy_loaded) {
+				memcpy((void *)&backup.config, &palette_legacy.config,
+						sizeof(palette_legacy.config));
+				backup.config.lighting_palette = 18;
+			} else if (legacy_loaded) {
+				backup.config.controller_id = legacy.config.controller_id;
+				backup.config.can_baud_rate = legacy.config.can_baud_rate;
+				backup.config.can_status_rate_hz = legacy.config.can_status_rate_hz;
+				backup.config.wifi_mode = legacy.config.wifi_mode;
+				memcpy((void *)backup.config.wifi_sta_ssid, legacy.config.wifi_sta_ssid,
+						sizeof(backup.config.wifi_sta_ssid));
+				memcpy((void *)backup.config.wifi_sta_key, legacy.config.wifi_sta_key,
+						sizeof(backup.config.wifi_sta_key));
+				memcpy((void *)backup.config.wifi_ap_ssid, legacy.config.wifi_ap_ssid,
+						sizeof(backup.config.wifi_ap_ssid));
+				memcpy((void *)backup.config.wifi_ap_key, legacy.config.wifi_ap_key,
+						sizeof(backup.config.wifi_ap_key));
+				backup.config.use_tcp_local = legacy.config.use_tcp_local;
+				backup.config.use_tcp_hub = legacy.config.use_tcp_hub;
+				memcpy((void *)backup.config.tcp_hub_url, legacy.config.tcp_hub_url,
+						sizeof(backup.config.tcp_hub_url));
+				backup.config.tcp_hub_port = legacy.config.tcp_hub_port;
+				memcpy((void *)backup.config.tcp_hub_id, legacy.config.tcp_hub_id,
+						sizeof(backup.config.tcp_hub_id));
+				memcpy((void *)backup.config.tcp_hub_pass, legacy.config.tcp_hub_pass,
+						sizeof(backup.config.tcp_hub_pass));
+				backup.config.ble_mode = legacy.config.ble_mode;
+				memcpy((void *)backup.config.ble_name, legacy.config.ble_name,
+						sizeof(backup.config.ble_name));
+				backup.config.ble_pin = legacy.config.ble_pin;
+				backup.config.ble_service_capacity = legacy.config.ble_service_capacity;
+				backup.config.ble_chr_descr_capacity = legacy.config.ble_chr_descr_capacity;
+			}
 			backup.config.controller_id = backup.controller_id;
 			backup.config.can_baud_rate = backup.can_baud_rate;
 		}

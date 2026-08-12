@@ -58,6 +58,7 @@
 #include "nmea.h"
 #include "lispif.h"
 #include "flash_helper.h"
+#include "nyx_lighting.h"
 #include "bms.h"
 #include "imu.h"
 
@@ -455,6 +456,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 			}
 
 			main_store_backup_data();
+			nyx_lighting_config_changed();
 
 			int32_t ind = 0;
 			uint8_t send_buffer[50];

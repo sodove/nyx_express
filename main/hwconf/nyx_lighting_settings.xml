@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ConfigParams>
+    <Params>
+        <config_name>
+            <longName>none</longName>
+            <type>3</type>
+            <transmittable>0</transmittable>
+            <valString>nyx_lighting_config</valString>
+        </config_name>
+        <hw_name>
+            <longName>NyxExpress</longName>
+            <type>0</type>
+            <transmittable>0</transmittable>
+            <description>Native WS2812 lighting configuration for the NyxExpress board.</description>
+        </hw_name>
+        <effect>
+            <longName>Effect</longName>
+            <type>4</type>
+            <transmittable>1</transmittable>
+            <description>Select one of the built-in effects. The renderer is firmware-owned and does not use LispBM for animation frames.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_EFFECT</cDefine>
+            <valInt>1</valInt>
+            <enumNames>Static color</enumNames>
+            <enumNames>Rainbow</enumNames>
+            <enumNames>Breathing</enumNames>
+            <enumNames>Comet</enumNames>
+            <enumNames>Color wipe</enumNames>
+            <enumNames>Police</enumNames>
+            <enumNames>Fire</enumNames>
+            <enumNames>Scanner</enumNames>
+            <enumNames>Theater chase</enumNames>
+            <enumNames>Twinkle</enumNames>
+            <enumNames>Meteor</enumNames>
+            <enumNames>Palette wave</enumNames>
+            <enumNames>Blink</enumNames>
+            <enumNames>Colorloop</enumNames>
+            <enumNames>Chase rainbow</enumNames>
+            <enumNames>Running</enumNames>
+            <enumNames>Saw</enumNames>
+            <enumNames>Dissolve</enumNames>
+            <enumNames>Sparkle</enumNames>
+            <enumNames>Strobe</enumNames>
+            <enumNames>Lightning</enumNames>
+            <enumNames>Traffic light</enumNames>
+            <enumNames>Christmas</enumNames>
+            <enumNames>Ocean</enumNames>
+            <enumNames>Lava</enumNames>
+            <enumNames>Pride</enumNames>
+            <enumNames>Juggle</enumNames>
+            <enumNames>Ripple</enumNames>
+            <enumNames>Dual scanner</enumNames>
+            <enumNames>Gradient</enumNames>
+            <enumNames>Matrix</enumNames>
+            <enumNames>Confetti</enumNames>
+            <enumNames>Sinelon</enumNames>
+            <enumNames>BPM</enumNames>
+            <enumNames>Plasma</enumNames>
+            <enumNames>Rainbow runner</enumNames>
+            <enumNames>Sparkle fade</enumNames>
+            <enumNames>Cylon</enumNames>
+            <enumNames>Larson</enumNames>
+            <enumNames>Random colors</enumNames>
+            <enumNames>Wipe random</enumNames>
+            <enumNames>Smooth meteor</enumNames>
+            <enumNames>Oscillate</enumNames>
+            <enumNames>In-out</enumNames>
+            <enumNames>Fire flicker</enumNames>
+            <enumNames>Rain</enumNames>
+            <enumNames>Fireworks</enumNames>
+            <enumNames>Colorwaves</enumNames>
+            <enumNames>Palette bands</enumNames>
+            <enumNames>Noise flow</enumNames>
+        </effect>
+        <led_count>
+            <longName>LED count</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>Physical number of addressable pixels on the strip. The firmware limits this to 200.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_LED_COUNT</cDefine>
+            <maxInt>200</maxInt>
+            <minInt>1</minInt>
+            <stepInt>1</stepInt>
+            <valInt>150</valInt>
+            <suffix> LEDs</suffix>
+            <vTx>3</vTx>
+        </led_count>
+        <brightness>
+            <longName>Brightness</longName>
+            <type>1</type>
+            <transmittable>1</transmittable>
+            <description>Global brightness limit. Keep this below 100 percent for the long strip unless the 5 V supply and wiring are sized for the current.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_BRIGHTNESS</cDefine>
+            <editorDecimalsDouble>0</editorDecimalsDouble>
+            <editAsPercentage>1</editAsPercentage>
+            <maxDouble>1</maxDouble>
+            <minDouble>0</minDouble>
+            <stepDouble>0.01</stepDouble>
+            <valDouble>0.25</valDouble>
+            <vTxDoubleScale>1000</vTxDoubleScale>
+            <vTx>7</vTx>
+        </brightness>
+        <speed>
+            <longName>Animation speed</longName>
+            <type>1</type>
+            <transmittable>1</transmittable>
+            <description>Animation speed multiplier. 1.0 is the normal speed.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_SPEED</cDefine>
+            <editorDecimalsDouble>1</editorDecimalsDouble>
+            <maxDouble>4</maxDouble>
+            <minDouble>0.1</minDouble>
+            <stepDouble>0.1</stepDouble>
+            <valDouble>1</valDouble>
+            <suffix> x</suffix>
+            <vTxDoubleScale>100</vTxDoubleScale>
+            <vTx>7</vTx>
+        </speed>
+        <enabled>
+            <longName>Lighting enabled</longName>
+            <type>5</type>
+            <transmittable>1</transmittable>
+            <description>Start or stop the firmware renderer.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_ENABLED</cDefine>
+            <valInt>1</valInt>
+        </enabled>
+        <auto_start>
+            <longName>Start after reboot</longName>
+            <type>5</type>
+            <transmittable>1</transmittable>
+            <description>Restore the running state after the board boots.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_AUTO_START</cDefine>
+            <valInt>1</valInt>
+        </auto_start>
+        <red>
+            <longName>Red</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>Selected color red component.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_RED</cDefine>
+            <maxInt>255</maxInt>
+            <minInt>0</minInt>
+            <stepInt>1</stepInt>
+            <valInt>0</valInt>
+            <vTx>3</vTx>
+        </red>
+        <green>
+            <longName>Green</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>Selected color green component.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_GREEN</cDefine>
+            <maxInt>255</maxInt>
+            <minInt>0</minInt>
+            <stepInt>1</stepInt>
+            <valInt>90</valInt>
+            <vTx>3</vTx>
+        </green>
+        <blue>
+            <longName>Blue</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>Selected color blue component.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_BLUE</cDefine>
+            <maxInt>255</maxInt>
+            <minInt>0</minInt>
+            <stepInt>1</stepInt>
+            <valInt>255</valInt>
+            <vTx>3</vTx>
+        </blue>
+        <brake_enabled>
+            <longName>Brake light enabled</longName>
+            <type>5</type>
+            <transmittable>1</transmittable>
+            <description>Override the current effect with a yellow blinking brake light when ADC2 from the selected VESC CAN ID crosses the threshold.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_BRAKE_ENABLED</cDefine>
+            <valInt>0</valInt>
+        </brake_enabled>
+        <brake_can_id>
+            <longName>Brake CAN ID</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>CAN ID of the VESC controller whose ADC2 is connected to the brake input.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_BRAKE_CAN_ID</cDefine>
+            <maxInt>255</maxInt>
+            <minInt>0</minInt>
+            <stepInt>1</stepInt>
+            <valInt>0</valInt>
+            <vTx>3</vTx>
+        </brake_can_id>
+        <brake_adc_threshold>
+            <longName>Brake ADC2 threshold</longName>
+            <type>1</type>
+            <transmittable>1</transmittable>
+            <description>ADC2 voltage threshold in volts. Firmware applies hysteresis and ignores stale CAN data.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_BRAKE_ADC_THRESHOLD</cDefine>
+            <editorDecimalsDouble>2</editorDecimalsDouble>
+            <maxDouble>5</maxDouble>
+            <minDouble>0</minDouble>
+            <stepDouble>0.01</stepDouble>
+            <valDouble>1</valDouble>
+            <suffix> V</suffix>
+            <vTxDoubleScale>1000</vTxDoubleScale>
+            <vTx>7</vTx>
+        </brake_adc_threshold>
+        <brake_active_high>
+            <longName>Brake ADC2 active high</longName>
+            <type>5</type>
+            <transmittable>1</transmittable>
+            <description>True when braking raises ADC2. Disable if braking lowers ADC2.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_BRAKE_ACTIVE_HIGH</cDefine>
+            <valInt>1</valInt>
+        </brake_active_high>
+        <brake_brightness>
+            <longName>Brake brightness</longName>
+            <type>1</type>
+            <transmittable>1</transmittable>
+            <description>Yellow brake override brightness.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_BRAKE_BRIGHTNESS</cDefine>
+            <editorDecimalsDouble>0</editorDecimalsDouble>
+            <editAsPercentage>1</editAsPercentage>
+            <maxDouble>1</maxDouble>
+            <minDouble>0</minDouble>
+            <stepDouble>0.01</stepDouble>
+            <valDouble>0.75</valDouble>
+            <vTxDoubleScale>1000</vTxDoubleScale>
+            <vTx>7</vTx>
+        </brake_brightness>
+        <brake_blink_hz>
+            <longName>Brake blink speed</longName>
+            <type>1</type>
+            <transmittable>1</transmittable>
+            <description>Brake warning blink frequency.</description>
+            <cDefine>NYX_LIGHTING_DEFAULT_BRAKE_BLINK_HZ</cDefine>
+            <editorDecimalsDouble>1</editorDecimalsDouble>
+            <maxDouble>8</maxDouble>
+            <minDouble>0.5</minDouble>
+            <stepDouble>0.5</stepDouble>
+            <valDouble>4</valDouble>
+            <suffix> Hz</suffix>
+            <vTxDoubleScale>100</vTxDoubleScale>
+            <vTx>7</vTx>
+        </brake_blink_hz>
+    </Params>
+    <SerOrder>
+        <ser>effect</ser>
+        <ser>led_count</ser>
+        <ser>brightness</ser>
+        <ser>speed</ser>
+        <ser>enabled</ser>
+        <ser>auto_start</ser>
+        <ser>red</ser>
+        <ser>green</ser>
+        <ser>blue</ser>
+        <ser>brake_enabled</ser>
+        <ser>brake_can_id</ser>
+        <ser>brake_adc_threshold</ser>
+        <ser>brake_active_high</ser>
+        <ser>brake_brightness</ser>
+        <ser>brake_blink_hz</ser>
+    </SerOrder>
+    <Grouping>
+        <group>
+            <groupName>General</groupName>
+            <subgroup>
+                <subgroupName>Lighting</subgroupName>
+                <subgroupParams>
+                    <param>enabled</param>
+                    <param>::sep::Effect</param>
+                    <param>effect</param>
+                    <param>led_count</param>
+                    <param>brightness</param>
+                    <param>speed</param>
+                </subgroupParams>
+            </subgroup>
+            <subgroup>
+                <subgroupName>Color</subgroupName>
+                <subgroupParams>
+                    <param>::sep::Selected color</param>
+                    <param>red</param>
+                    <param>green</param>
+                    <param>blue</param>
+                </subgroupParams>
+            </subgroup>
+            <subgroup>
+                <subgroupName>System</subgroupName>
+                <subgroupParams>
+                    <param>auto_start</param>
+                </subgroupParams>
+            </subgroup>
+            <subgroup>
+                <subgroupName>Brake</subgroupName>
+                <subgroupParams>
+                    <param>brake_enabled</param>
+                    <param>::sep::CAN source</param>
+                    <param>brake_can_id</param>
+                    <param>brake_adc_threshold</param>
+                    <param>brake_active_high</param>
+                    <param>::sep::Warning light</param>
+                    <param>brake_brightness</param>
+                    <param>brake_blink_hz</param>
+                </subgroupParams>
+            </subgroup>
+        </group>
+    </Grouping>
+</ConfigParams>
